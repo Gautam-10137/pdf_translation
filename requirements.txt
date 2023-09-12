@@ -1,5 +1,5 @@
 deep_translator==1.11.4
-Flask==2.2.5
+Flask==2.0.1
 nltk==3.8.1
 PyPDF2==3.0.1
 reportlab==4.0.4
