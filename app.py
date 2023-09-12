@@ -8,9 +8,25 @@ import os
 
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-pdfmetrics.registerFont(TTFont('HindiFont', 'Hind-Regular.ttf'))
+pdfmetrics.registerFont(TTFont('HindiFont', 'Fonts/Hind-Regular.ttf'))
+pdfmetrics.registerFont(TTFont('GujaratiFont', 'Fonts/Gujarati.ttf'))
+pdfmetrics.registerFont(TTFont('BengaliFont', 'Fonts/Bengali.ttf'))
+pdfmetrics.registerFont(TTFont('MarathiFont', 'Fonts/Marathi.ttf'))
+pdfmetrics.registerFont(TTFont('TamilFont', 'Fonts/Tamil.ttf'))
+pdfmetrics.registerFont(TTFont('TeluguFont', 'Fonts/Telugu.ttf'))
 
 app = Flask(__name__)
+
+# Define a mapping of languages to font names
+language_to_font = {
+    'hi': 'HindiFont',
+    'gu':'GujaratiFont',
+    'mr':'MarathiFont',
+    'ta':'TamilFont',
+    'te':'TeluguFont',
+    'bn':'BengaliFont'
+}
+
 @app.route("/translate-pdf", methods=["POST"])
 def translate_pdf_route():
     try:
@@ -19,20 +35,31 @@ def translate_pdf_route():
             # Read the file content
             pdf_content = uploaded_file.read()
             
-            # Perform translation using your function and pass the content
-            translated_text = translate(pdf_content)  # Call the translation function
-           
-            # Create a PDF from the translated text
-            pdf_stream = BytesIO()
-            doc = SimpleDocTemplate(pdf_stream, pagesize=letter)
-            styles = getSampleStyleSheet()
-            style = styles["Normal"]
-            style.fontName = 'HindiFont'
-            translated_paragraph = Paragraph(translated_text, style)
-            story = [translated_paragraph]
-            doc.build(story)
+            # Get target languages from user input
+            target_languages = request.form.get("target_language")
+            if not target_languages:
+                return jsonify({"error": "Target languages not provided."}), 400
+            target_languages = target_languages.split(',')  # Split into a list
             
-            # Set appropriate headers for PDF file
+            # Perform translation for each target language using your function and pass the content
+            translated_texts = translate(pdf_content, target_languages)  # Call the translation function
+            
+            # Create a PDF for each translated text with the appropriate font
+            pdf_streams = {}
+            for lang, text in translated_texts.items():
+                pdf_stream = BytesIO()
+                doc = SimpleDocTemplate(pdf_stream, pagesize=letter)
+                styles = getSampleStyleSheet()
+                style = styles["Normal"]
+                # Set the font based on the language
+                if lang in language_to_font:
+                    style.fontName = language_to_font[lang]
+                translated_paragraph = Paragraph(text, style)
+                story = [translated_paragraph]
+                doc.build(story)
+                pdf_streams[lang] = pdf_stream
+            
+            # Set appropriate headers for ZIP file
             response = make_response(pdf_stream.getvalue())
             response.headers["Content-Disposition"] = "attachment; filename=translated.pdf"
             response.headers["Content-Type"] = "application/pdf"

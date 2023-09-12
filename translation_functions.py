@@ -4,12 +4,13 @@ import PyPDF2
 import textwrap
 from nltk.tokenize import sent_tokenize
 import nltk
+
 nltk.download('punkt')
 
-def translate(pdf_content):
-    def translate_extracted(Extracted):
+def translate(pdf_content, target_languages):
+    def translate_extracted(Extracted, target_language):
         """Wrapper for Google Translate with upload workaround."""
-        translate = GoogleTranslator(source='auto', target='hi').translate
+        translate = GoogleTranslator(source='auto', target=target_language).translate
         sentences = sent_tokenize(Extracted)
         translated_text = ''
         source_text_chunk = ''
@@ -37,14 +38,17 @@ def translate(pdf_content):
             page = pdf_reader.pages[page_number]
             extracted_text += page.extract_text()
 
-        # Translate the extracted text
-        translated_text = translate_extracted(extracted_text)
+        # Translate the extracted text for each target language
+        translated_texts = {}
+        for target_language in target_languages:
+            translated_texts[target_language] = translate_extracted(extracted_text, target_language)
 
-        # Return the translated text
-        return translated_text
+        # Return the translated texts
+        return translated_texts
     except Exception as e:
-        return str(e)+"gautam"
+        return str(e) + "gautam"
 
 # Example usage:
 # pdf_content = ...  # Binary PDF content
-# translated_text = translate_pdf(pdf_content)
+# target_languages = ['hi', 'fr', 'es']  # List of target languages
+# translated_texts = translate(pdf_content, target_languages)
