@@ -3,6 +3,8 @@ from deep_translator import GoogleTranslator
 import PyPDF2
 import textwrap
 from nltk.tokenize import sent_tokenize
+import nltk
+nltk.download('punkt')
 
 def translate(pdf_content):
     def translate_extracted(Extracted):
